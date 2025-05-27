@@ -45,15 +45,60 @@ async function run() {
     });
 
     // job applications related APIs
+    // app.get("/applications", async (req, res) => {
+    //   const email = req.query.email;
+    //   const query = {
+    //     applicantEmail: email,
+    //   };
+    //   const result = await applicationsCollection.find(query).toArray();
+
+    //   // bad way to aggregate data
+    //   for (const application of result) {
+    //     const jobId = application.jobId;
+    //     const jobQuery = { _id: new ObjectId(jobId) };
+    //     const job = await jobsCollection.findOne(jobQuery);
+    //     application.company = job.company;
+    //     application.title = job.title;
+    //     application.company_logo = job.company_logo;
+    //     application.applicantEmail = job.applicantEmail;
+    //     application.submittedAt = job.submittedAt;
+    //     application.submittedAt = job.submittedAt;
+    //     application.referralSource = job.referralSource;
+    //   }
+
+    //   res.send(result);
+    // });
+
+    // another way start here
     app.get("/applications", async (req, res) => {
       const email = req.query.email;
-      console.log(email);
-      const query = {
-        applicantEmail: email,
-      };
-      const result = await applicationsCollection.find(query).toArray();
-      res.send(result);
+      const query = { applicantEmail: email };
+
+      const applications = await applicationsCollection.find(query).toArray();
+
+      const updatedApplications = await Promise.all(
+        applications.map(async (application) => {
+          const job = await jobsCollection.findOne({
+            _id: new ObjectId(application.jobId),
+          });
+
+          if (job) {
+            return {
+              ...application,
+              company: job.company,
+              title: job.title,
+              company_logo: job.company_logo,
+              referralSource: job.referralSource,
+            };
+          }
+
+          return application;
+        })
+      );
+
+      res.send(updatedApplications);
     });
+    // another way end here
 
     app.post("/applications", async (req, res) => {
       const application = req.body;
