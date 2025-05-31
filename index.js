@@ -74,6 +74,7 @@ async function run() {
       const result = await jobsCollection.insertOne(newJob);
       res.send(result);
     });
+    
 
     // job applications related APIs
     // app.get("/applications", async (req, res) => {
